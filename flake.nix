@@ -30,6 +30,8 @@
    devShells.${system}.default = pkgs.mkShell {
      buildInputs = [
        rust
+       pkgs.openocd-rp2040
+       pkgs.probe-rs
        pkgs.elf2uf2-rs
        pkgs.minicom
      ];
