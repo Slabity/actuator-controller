@@ -29,19 +29,27 @@ bind_interrupts!(struct Irqs {
 });
 
 assign_resources::assign_resources! {
+    led: LedResources {
+        pin: PIN_25
+    },
     adc: AdcResources {
         sda: PIN_16,
         scl: PIN_17,
         i2c: I2C0,
         interrupt: PIN_18
-    }
+    },
+}
+
+#[cortex_m_rt::pre_init]
+unsafe fn before_main() {
+    // Soft-reset doesn't clear spinlocks. Clear the one used by critical-section
+    // before we hit main to avoid deadlocks when using a debugger
+    embassy_rp::pac::SIO.spinlock(31).write_value(1);
 }
 
 #[embassy_executor::main]
-async fn main(_spawner: embassy_executor::Spawner) {
-    embassy_rp::pac::SIO.spinlock(31).write_value(1);
+async fn main(spawner: embassy_executor::Spawner) {
     let p = embassy_rp::init(Default::default());
-    let mut led = gpio::Output::new(p.PIN_25, gpio::Level::Low);
     let r = split_resources!(p);
 
     // Give program a moment before starting fully
@@ -60,16 +68,25 @@ async fn main(_spawner: embassy_executor::Spawner) {
         }
     );
 
+    defmt::info!("Spawning LED process");
+    spawner.spawn(led_looper(r.led)).unwrap();
+
     defmt::info!("Entering main loop");
+    loop {
+        Timer::after(Duration::from_millis(1000)).await;
+        defmt::info!("Looping");
+    }
+}
+
+#[embassy_executor::task]
+async fn led_looper(led: LedResources) {
+    let mut led = gpio::Output::new(led.pin, gpio::Level::Low);
+
     loop {
         led.set_high();
         Timer::after(Duration::from_millis(250)).await;
 
         led.set_low();
         Timer::after(Duration::from_millis(750)).await;
-
-        embassy_futures::yield_now().await
     }
 }
-
-

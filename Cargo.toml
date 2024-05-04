@@ -3,6 +3,9 @@ name = "actuator-controller"
 version = "0.0.0"
 edition = "2021"
 
+[profile.release]
+debug = 2
+
 [dependencies]
 cortex-m-rt = "0.7.4"
 
