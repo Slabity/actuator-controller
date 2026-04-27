@@ -17,14 +17,20 @@
 
    toolchain = inputs.fenix.packages.${system}.fromToolchainFile {
      file = ./rust-toolchain.toml;
-     sha256 = "sha256-vSkJARde0GQOPOHbV1NJUAiCnQGtS/JESNidRCs9Spk=";
+     sha256 = "sha256-CvIrHO77ukowaW3l6NNfWh38nfIRBGsN2jEqQvo+RIs=";
    };
+
+   python = pkgs.python3.withPackages (ps: with ps; [
+     matplotlib
+     pyserial
+   ]);
  in
  {
    devShells.${system}.default = pkgs.mkShell {
      buildInputs = [
        toolchain
        pkgs.probe-rs
+       python
      ];
    };
  };
